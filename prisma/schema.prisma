@@ -1,0 +1,68 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model user {
+  id        String   @id
+  firstName String
+  lastName  String
+  email     String   @unique
+  avatarUrl String
+  createdAt DateTime @default(now())
+  url       url[]
+}
+
+model url {
+  id             String         @id @default(uuid())
+  userId         String
+  url            String
+  status         STATUS
+  reqTime        Int
+  notificationId String?
+  createdAt      DateTime       @default(now())
+  totalUptime    Int            @default(0)
+  updatedAt      DateTime       @updatedAt
+  siteName       String
+  targetDomain   String
+  incident       incident[]
+  notification   notification[]
+  pingLog        pingLog[]
+  user           user           @relation(fields: [userId], references: [id])
+}
+
+model incident {
+  id        String    @id @default(uuid())
+  urlId     String
+  startTime DateTime  @default(now())
+  endTime   DateTime?
+  urls      url       @relation(fields: [urlId], references: [id])
+}
+
+model pingLog {
+  id        String   @id @default(uuid())
+  urlId     String
+  avgTime   Int
+  maxTime   Int
+  createdAt DateTime @default(now())
+  urls      url      @relation(fields: [urlId], references: [id])
+}
+
+model notification {
+  id            String   @id @default(uuid())
+  urlId         String
+  totalMailSent Int
+  mailLimit     Int      @default(3)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  url           url      @relation(fields: [urlId], references: [id])
+}
+
+enum STATUS {
+  UP
+  DOWN
+}

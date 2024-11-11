@@ -1,0 +1,29 @@
+{
+  "name": "3_min_consumer",
+  "version": "1.0.0",
+  "description": "",
+  "main": "./src/index.js",
+  "scripts": {
+    "dev": "tsc-watch --onSuccess \"node dist/index\"",
+    "build": "tsc --build",
+    "start": "npm run build & node dist/index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^22.9.0",
+    "@types/node-cron": "^3.0.11",
+    "@types/ping": "^0.4.4",
+    "tsc-watch": "^6.2.0",
+    "typescript": "^5.6.3"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "axios": "^1.7.7",
+    "dotenv": "^16.4.5",
+    "node-cron": "^3.0.3",
+    "ping": "^0.4.4",
+    "prisma": "^5.22.0"
+  }
+}
