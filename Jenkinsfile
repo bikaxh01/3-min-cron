@@ -3,7 +3,7 @@ pipeline {
     stages {
         stage('Cloning Code from GitHub') {
             steps {
-                git clone 'https://github.com/bikaxh01/3-min-cron.git'
+                 git branch: 'main', url: 'https://github.com/bikaxh01/3-min-cron.git'
             }
         }
         stage('Building Docker Image..') {
