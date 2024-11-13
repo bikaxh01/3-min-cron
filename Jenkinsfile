@@ -1,13 +1,9 @@
 pipeline {
-    environment {
-        DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials-id')
-    }
-
     agent any
     stages {
-        stage('Cloneing Code from GitHub') {
+        stage('Cloning Code from GitHub') {
             steps {
-                git 'https://github.com/bikaxh01/3-min-cron.git'
+                git clone 'https://github.com/bikaxh01/3-min-cron.git'
             }
         }
         stage('Building Docker Image..') {
