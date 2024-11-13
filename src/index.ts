@@ -5,7 +5,7 @@ import util from "util";
 import { prisma_client } from "./DB/prismaClient";
 
 const execPromise = util.promisify(exec);
-console.log("Running Cron 3-min-consumer/V0.1 🟢");
+console.log("Cron 3-min-consumer/V0.1 🟢");
 cron.schedule("*/3 * * * *", () => {
   console.log("Running Cron 3-min-consumer/V0.1 🟢");
 
