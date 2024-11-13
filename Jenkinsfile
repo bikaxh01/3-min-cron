@@ -28,5 +28,15 @@ pipeline {
                 }
             }
         }
+        stage('Cleanup Local Docker Images') {
+            steps {
+                script {
+                    def commitId = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
+
+                    sh "docker rmi bikaxh01/3-min-cron:${commitId} || true"  // Remove the commit-tagged image
+                    sh 'docker rmi bikaxh01/3-min-cron:latest || true'       // Remove the latest-tagged image
+                }
+            }
+        }
     }
 }
