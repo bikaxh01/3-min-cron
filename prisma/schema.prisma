@@ -18,29 +18,31 @@ model user {
 }
 
 model url {
-  id             String         @id @default(uuid())
-  userId         String
-  url            String
-  status         STATUS
-  reqTime        Int
-  notificationId String?
-  createdAt      DateTime       @default(now())
-  totalUptime    Int            @default(0)
-  updatedAt      DateTime       @updatedAt
-  siteName       String
-  targetDomain   String
-  incident       incident[]
-  notification   notification[]
-  pingLog        pingLog[]
-  user           user           @relation(fields: [userId], references: [id])
+  id           String         @id @default(uuid())
+  userId       String
+  url          String
+  status       STATUS
+  reqTime      Int
+  createdAt    DateTime       @default(now())
+  totalUptime  Int            @default(0)
+  updatedAt    DateTime       @updatedAt
+  siteName     String
+  targetDomain String
+  incident     incident[]
+  pingLog      pingLog[]
+  user         user           @relation(fields: [userId], references: [id])
+  notification notification[]
 }
 
 model incident {
-  id        String    @id @default(uuid())
-  urlId     String
-  startTime DateTime  @default(now())
-  endTime   DateTime?
-  urls      url       @relation(fields: [urlId], references: [id])
+  id             String        @id @default(uuid())
+  urlId          String
+  startTime      DateTime      @default(now())
+  endTime        DateTime?
+  notificationId String?       @unique
+  notification   notification? @relation(fields: [notificationId], references: [id])
+  urls           url           @relation(fields: [urlId], references: [id])
+  createdAt      DateTime      @default(now())
 }
 
 model pingLog {
@@ -53,13 +55,14 @@ model pingLog {
 }
 
 model notification {
-  id            String   @id @default(uuid())
+  id            String    @id @default(uuid())
   urlId         String
   totalMailSent Int
-  mailLimit     Int      @default(3)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  url           url      @relation(fields: [urlId], references: [id])
+  mailLimit     Int       @default(2)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  incident      incident?
+  url           url       @relation(fields: [urlId], references: [id])
 }
 
 enum STATUS {

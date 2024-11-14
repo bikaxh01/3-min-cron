@@ -3,17 +3,24 @@ import cron from "node-cron";
 import { exec } from "child_process";
 import util from "util";
 import { prisma_client } from "./DB/prismaClient";
+import { sendMail } from "./Email/resend-config";
+import { sendNotification } from "./Email/sendNotification";
+import axios from "axios";
 
 const execPromise = util.promisify(exec);
 console.log("Cron 3-min-consumer/V0.1 🟢");
-cron.schedule("*/3 * * * *", () => {
+// cron.schedule("*/3 * * * *", () => {
+//   console.log("Running Cron 3-min-consumer/V0.1 🟢");
+
+//   checkStatus();
+// });
+
+cron.schedule("* * * * *", () => {
   console.log("Running Cron 3-min-consumer/V0.1 🟢");
 
   checkStatus();
 });
 // checkStatus();
-
-
 
 async function checkStatus() {
   const urls = await prisma_client.url.findMany({
@@ -21,20 +28,24 @@ async function checkStatus() {
       reqTime: 3,
     },
     include: {
-      incident: true,
+      incident: {
+        orderBy: {
+          createdAt: "desc",
+        },
+        take: 1,
+      },
     },
   });
 
   const requests = urls.map((url) => {
     const { targetDomain } = url;
-    const status = pingHost(`${targetDomain}`);
+    const status = pingHost(`${targetDomain}`, url.url);
     return status;
   });
 
   const results = await Promise.allSettled(requests);
 
   results.map(async (result: any, index) => {
-  
     const url = urls[index];
 
     //add ping log
@@ -59,8 +70,12 @@ async function checkStatus() {
             endTime: new Date(),
           },
         });
+        console.log(
+          "🚀 ~ results.map ~ incidentId site is up now:",
+          incidentId
+        );
         //send mail for you site is UP Now
-
+        await sendNotification(incidentId.id, "UP ALERT");
         //update current status in db
         await prisma_client.url.update({
           where: {
@@ -88,12 +103,16 @@ async function checkStatus() {
       //check previous status
       if (url.status === "UP") {
         //create incident
-        await prisma_client.incident.create({
+        const incident = await prisma_client.incident.create({
           data: {
             urlId: url.id,
             startTime: new Date(),
           },
         });
+        console.log(
+          "🚀 ~ results.map ~ incidentId site is down now:",
+          incident.id
+        );
 
         await prisma_client.url.update({
           where: {
@@ -104,80 +123,97 @@ async function checkStatus() {
           },
         });
         //send mail
+        await sendNotification(incident.id, "DOWN ALERT");
       } else {
         //send mail
-        console.log("send mail");
+        const incident = url.incident[0];
+        console.log("🚀 ~ results.map ~ incident:", incident.id)
+        console.log('sending mail');
+        
+       await sendNotification(incident.id, "DOWN ALERT");
       }
     }
   });
 }
 
-function extractAverageTime(pingOutput: string) {
-  // Regular expression to match the 'round-trip min/avg/max' pattern
-  const averageTimeMatch = pingOutput.match(
-    /round-trip\s*min\/avg\/max\s*=\s*\d+\.\d+\/(\d+\.\d+)\/\d+\.\d+/
-  );
-
-  if (averageTimeMatch && averageTimeMatch[1]) {
-    // Return the extracted average time as a number
-    return parseInt(averageTimeMatch[1]);
-  }
-
-  // Return null if no average time is found
-  return null;
-}
-
-function extractMaximumTime(pingOutput: string) {
-  const maximumTimeMatch = pingOutput.match(
-    /round-trip\s*min\/avg\/max\s*=\s*\d+\.\d+\/\d+\.\d+\/(\d+\.\d+)/
-  );
-
-  if (maximumTimeMatch && maximumTimeMatch[1]) {
-    return parseInt(maximumTimeMatch[1]);
-  }
-
-  return null;
-}
-
-//     FOR WINDOWS
-// function extractAverageTime(pingOutput: string): number | null {
-//   // Regular expression to match the 'Average = Xms' pattern
-//   const averageTimeMatch = pingOutput.match(/Average\s*=\s*(\d+)ms/);
+// function extractAverageTime(pingOutput: string) {
+//   // Regular expression to match the 'round-trip min/avg/max' pattern
+//   const averageTimeMatch = pingOutput.match(
+//     /round-trip\s*min\/avg\/max\s*=\s*\d+\.\d+\/(\d+\.\d+)\/\d+\.\d+/
+//   );
 
 //   if (averageTimeMatch && averageTimeMatch[1]) {
 //     // Return the extracted average time as a number
-//     return parseInt(averageTimeMatch[1], 10);
+//     return parseInt(averageTimeMatch[1]);
 //   }
 
 //   // Return null if no average time is found
 //   return null;
 // }
-//     FOR WINDOWS
-// function extractMaximumTime(pingOutput: string): number | null {
-//   const MaximumTimeMatch = pingOutput.match(/Maximum\s*=\s*(\d+)ms/);
 
-//   if (MaximumTimeMatch && MaximumTimeMatch[1]) {
-//     return parseInt(MaximumTimeMatch[1], 10);
+// function extractMaximumTime(pingOutput: string) {
+//   const maximumTimeMatch = pingOutput.match(
+//     /round-trip\s*min\/avg\/max\s*=\s*\d+\.\d+\/\d+\.\d+\/(\d+\.\d+)/
+//   );
+
+//   if (maximumTimeMatch && maximumTimeMatch[1]) {
+//     return parseInt(maximumTimeMatch[1]);
 //   }
 
 //   return null;
 // }
 
-async function pingHost(targetDomain: string) {
+//FOR WINDOWS
+function extractAverageTime(pingOutput: string): number | null {
+  // Regular expression to match the 'Average = Xms' pattern
+  const averageTimeMatch = pingOutput.match(/Average\s*=\s*(\d+)ms/);
+
+  if (averageTimeMatch && averageTimeMatch[1]) {
+    // Return the extracted average time as a number
+    return parseInt(averageTimeMatch[1], 10);
+  }
+
+  // Return null if no average time is found
+  return null;
+}
+// FOR WINDOWS
+function extractMaximumTime(pingOutput: string): number | null {
+  const MaximumTimeMatch = pingOutput.match(/Maximum\s*=\s*(\d+)ms/);
+
+  if (MaximumTimeMatch && MaximumTimeMatch[1]) {
+    return parseInt(MaximumTimeMatch[1], 10);
+  }
+
+  return null;
+}
+
+async function pingHost(targetDomain: string, url: string) {
   try {
-    const { stdout, stderr } = await execPromise(`ping -c 4 ${targetDomain}`);
+    const { stdout, stderr } = await execPromise(`ping -n 4 ${targetDomain}`);
 
     console.log("🚀 ~ pingHost ~ stdout:", stdout);
     console.log("🚀 ~ pingHost ~ stderr:", stderr);
     const averageTime = extractAverageTime(stdout);
     const MaximumTime = extractMaximumTime(stdout);
-    return {
-      status: "UP",
-      averageTime: averageTime,
-      maximumTime: MaximumTime,
-    };
+    let fetchStatus = false;
+    if (!stderr) {
+      console.log(`checking for url ${targetDomain}`);
+
+      const response = await axios.get(url);
+      console.log(response.status);
+      if (response.status == 200) {
+        console.log("StatusL Up from fetch");
+
+        return {
+          status: "UP",
+          averageTime: averageTime,
+          maximumTime: MaximumTime,
+        };
+      } else {
+        return { status: "DOWN", averageTime: 0, maximumTime: 0 };
+      }
+    }
   } catch (error: any) {
-    console.log("🚀 ~ pingHost ~ error:", error);
     return { status: "DOWN", averageTime: 0, maximumTime: 0 };
   }
 }

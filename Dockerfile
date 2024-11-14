@@ -11,5 +11,6 @@ COPY . .
 
 RUN npx prisma generate
 
+RUN npm run build
 
-CMD ["npm", "run", "start"]
+CMD ["node", "dist/index.js"]
