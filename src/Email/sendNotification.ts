@@ -57,7 +57,7 @@ export async function sendNotification(
           formattedDate,
           getLastCheckedDetails.siteName
         );
-        console.log("🚀 ~ response:", response);
+
         return;
       }
 
@@ -72,7 +72,7 @@ export async function sendNotification(
           formattedDate,
           getLastCheckedDetails.siteName
         );
-        console.log("🚀 ~ response:", response);
+
         if (response.status === "success") {
           await prisma_client.notification.update({
             where: {
@@ -108,9 +108,8 @@ export async function sendNotification(
         formattedDate,
         getLastCheckedDetails.siteName
       );
-      console.log("🚀 ~ response: after creatinon", response);
+
       if (response.status === "success") {
-        console.log("Reached");
         await prisma_client.notification.update({
           where: {
             id: addNotificationToIncident.id,

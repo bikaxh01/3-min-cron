@@ -48,14 +48,12 @@ async function sendNotification(incidentId, notificationType) {
             //check limit
             if (notificationType === "UP ALERT") {
                 const response = await (0, resend_config_1.sendMail)(getLastCheckedDetails.user.email, notificationType, formattedDate, getLastCheckedDetails.siteName);
-                console.log("🚀 ~ response:", response);
                 return;
             }
             if (getIncident.notification.totalMailSent <
                 getIncident.notification.mailLimit) {
                 //sendmail && increase count
                 const response = await (0, resend_config_1.sendMail)(getLastCheckedDetails.user.email, notificationType, formattedDate, getLastCheckedDetails.siteName);
-                console.log("🚀 ~ response:", response);
                 if (response.status === "success") {
                     await prismaClient_1.prisma_client.notification.update({
                         where: {
@@ -87,9 +85,7 @@ async function sendNotification(incidentId, notificationType) {
             });
             //send mail && increase count
             const response = await (0, resend_config_1.sendMail)(getLastCheckedDetails.user.email, notificationType, formattedDate, getLastCheckedDetails.siteName);
-            console.log("🚀 ~ response: after creatinon", response);
             if (response.status === "success") {
-                console.log("Reached");
                 await prismaClient_1.prisma_client.notification.update({
                     where: {
                         id: addNotificationToIncident.id,

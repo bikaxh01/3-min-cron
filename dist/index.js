@@ -10,13 +10,13 @@ const prismaClient_1 = require("./DB/prismaClient");
 const sendNotification_1 = require("./Email/sendNotification");
 const axios_1 = __importDefault(require("axios"));
 const execPromise = util_1.default.promisify(child_process_1.exec);
-console.log("Cron 3-min-consumer/V0.1 🟢");
+console.log("Cron 3-min-consumer/V1.4 🟢");
 // cron.schedule("*/3 * * * *", () => {
 //   console.log("Running Cron 3-min-consumer/V0.1 🟢");
 //   checkStatus();
 // });
 node_cron_1.default.schedule("* * * * *", () => {
-    console.log("Running Cron 3-min-consumer/V0.1 🟢");
+    console.log("Running Cron 3-min-consumer/V1.4 🟢");
     checkStatus();
 });
 // checkStatus();
@@ -107,13 +107,14 @@ async function checkStatus() {
                     },
                 });
                 //send mail
+                console.log("sending mail");
                 await (0, sendNotification_1.sendNotification)(incident.id, "DOWN ALERT");
             }
             else {
                 //send mail
                 const incident = url.incident[0];
                 console.log("🚀 ~ results.map ~ incident:", incident.id);
-                console.log('sending mail');
+                console.log("sending mail");
                 await (0, sendNotification_1.sendNotification)(incident.id, "DOWN ALERT");
             }
         }
@@ -162,17 +163,14 @@ function extractMaximumTime(pingOutput) {
 async function pingHost(targetDomain, url) {
     try {
         const { stdout, stderr } = await execPromise(`ping -n 4 ${targetDomain}`);
-        console.log("🚀 ~ pingHost ~ stdout:", stdout);
-        console.log("🚀 ~ pingHost ~ stderr:", stderr);
         const averageTime = extractAverageTime(stdout);
         const MaximumTime = extractMaximumTime(stdout);
         let fetchStatus = false;
         if (!stderr) {
             console.log(`checking for url ${targetDomain}`);
             const response = await axios_1.default.get(url);
-            console.log(response.status);
+            console.log(`checking for url ${targetDomain} => status is ${response.status}`);
             if (response.status == 200) {
-                console.log("StatusL Up from fetch");
                 return {
                     status: "UP",
                     averageTime: averageTime,

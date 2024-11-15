@@ -8,7 +8,7 @@ import { sendNotification } from "./Email/sendNotification";
 import axios from "axios";
 
 const execPromise = util.promisify(exec);
-console.log("Cron 3-min-consumer/V0.1 🟢");
+console.log("Cron 3-min-consumer/V1.4 🟢");
 // cron.schedule("*/3 * * * *", () => {
 //   console.log("Running Cron 3-min-consumer/V0.1 🟢");
 
@@ -16,7 +16,7 @@ console.log("Cron 3-min-consumer/V0.1 🟢");
 // });
 
 cron.schedule("* * * * *", () => {
-  console.log("Running Cron 3-min-consumer/V0.1 🟢");
+  console.log("Running Cron 3-min-consumer/V1.4 🟢");
 
   checkStatus();
 });
@@ -123,14 +123,15 @@ async function checkStatus() {
           },
         });
         //send mail
+        console.log("sending mail");
         await sendNotification(incident.id, "DOWN ALERT");
       } else {
         //send mail
         const incident = url.incident[0];
-        console.log("🚀 ~ results.map ~ incident:", incident.id)
-        console.log('sending mail');
-        
-       await sendNotification(incident.id, "DOWN ALERT");
+        console.log("🚀 ~ results.map ~ incident:", incident.id);
+        console.log("sending mail");
+
+        await sendNotification(incident.id, "DOWN ALERT");
       }
     }
   });
@@ -191,8 +192,6 @@ async function pingHost(targetDomain: string, url: string) {
   try {
     const { stdout, stderr } = await execPromise(`ping -n 4 ${targetDomain}`);
 
-    console.log("🚀 ~ pingHost ~ stdout:", stdout);
-    console.log("🚀 ~ pingHost ~ stderr:", stderr);
     const averageTime = extractAverageTime(stdout);
     const MaximumTime = extractMaximumTime(stdout);
     let fetchStatus = false;
@@ -200,10 +199,9 @@ async function pingHost(targetDomain: string, url: string) {
       console.log(`checking for url ${targetDomain}`);
 
       const response = await axios.get(url);
-      console.log(response.status);
-      if (response.status == 200) {
-        console.log("StatusL Up from fetch");
+      console.log(`checking for url ${targetDomain} => status is ${response.status}`);
 
+      if (response.status == 200) {
         return {
           status: "UP",
           averageTime: averageTime,
